@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	p24Error "github.com/arturwwl/p24-golang-client/model/error"
+	p24Error "github.com/arturwwl/p24-golang-client/error"
+	p24ErrorModel "github.com/arturwwl/p24-golang-client/model/error"
 	"io/ioutil"
 	"net/http"
 )
@@ -23,7 +24,7 @@ func getUrl(isProd bool, path string) string {
 	return urlString
 }
 
-func (c *P24Client) MakeRequest(method string, path string, data interface{}) ([]byte, error) {
+func (c *P24Client) MakeRequest(method string, path string, data interface{}) ([]byte, p24Error.P24Error) {
 	var requestBody *bytes.Buffer
 	var err error
 	var req *http.Request
@@ -58,9 +59,9 @@ func (c *P24Client) MakeRequest(method string, path string, data interface{}) ([
 		return nil, err
 	}
 	if resp.StatusCode > 204 {
-		var errO p24Error.ErrorStruct
+		var errO p24ErrorModel.ErrorStruct
 		_ = json.Unmarshal(bodyBytes, &errO)
-		return nil, fmt.Errorf(errO.Error)
+		return nil, p24Error.Errorf(errO.Error)
 	}
 
 	return bodyBytes, err

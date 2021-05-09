@@ -3,8 +3,9 @@ package p24Client
 import (
 	"encoding/json"
 	"fmt"
+	p24error "github.com/arturwwl/p24-golang-client/error"
 	"github.com/arturwwl/p24-golang-client/model/transaction"
-	"github.com/arturwwl/p24-golang-client/model/trasactionVerify"
+	"github.com/arturwwl/p24-golang-client/model/transactionVerify"
 	p24Path "github.com/arturwwl/p24-golang-client/path"
 )
 
@@ -12,10 +13,10 @@ func (c *P24Client) GenerateTransactionClientLink(token string) string {
 	return fmt.Sprintf(getUrl(c.Config.IsProd, p24Path.TransactionClientLink), token)
 }
 
-func (c *P24Client) RegisterTransaction(transactionData *transaction.Transaction) (*transaction.Created, error) {
+func (c *P24Client) RegisterTransaction(transactionData *transaction.Transaction) (*transaction.Created, p24error.P24Error) {
 
 	if true { //tVerify does not need to be accessed later
-		tVerify := &trasactionVerify.TransactionVerify{
+		tVerify := &transactionVerify.TransactionVerify{
 			PosID:      transactionData.PosID,
 			SessionID:  transactionData.SessionID,
 			Amount:     transactionData.Amount,

@@ -3,7 +3,7 @@ package test
 import (
 	"github.com/arturwwl/p24-golang-client/currency"
 	"github.com/arturwwl/p24-golang-client/model/transaction"
-	"github.com/arturwwl/p24-golang-client/model/trasactionVerify"
+	"github.com/arturwwl/p24-golang-client/model/transactionVerify"
 	"github.com/arturwwl/p24-golang-client/p24Client"
 	"github.com/google/uuid"
 	"testing"
@@ -11,7 +11,7 @@ import (
 
 func TestCalcSignAndToJSON(t *testing.T) {
 	orderID := uint64(456)
-	tVerify := &trasactionVerify.TransactionVerify{
+	tVerify := &transactionVerify.TransactionVerify{
 		//MerchantID: 123,
 		PosID:     234,
 		SessionID: "abc",
@@ -25,7 +25,7 @@ func TestCalcSignAndToJSON(t *testing.T) {
 
 func TestEncodeAndDecodeTransaction(t *testing.T) {
 	orderID := uint64(456)
-	tVerify := &trasactionVerify.TransactionVerify{
+	tVerify := &transactionVerify.TransactionVerify{
 		//MerchantID: 123,
 		PosID:     234,
 		SessionID: "abc",
@@ -35,7 +35,7 @@ func TestEncodeAndDecodeTransaction(t *testing.T) {
 	}
 	tvJson := tVerify.ToJSON()
 
-	tVerifyFromJSON, err := trasactionVerify.FromJSON(tvJson)
+	tVerifyFromJSON, err := transactionVerify.FromJSON(tvJson)
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,15 +72,12 @@ func TestPaymentMethods(t *testing.T) {
 	t.Log(methods)
 }
 
-var transactionData *transaction.Transaction
-var isManual bool
-
 func TestCreateTransaction(t *testing.T) {
 	client, err := p24Client.New("conf/testsandbox.ini")
 	if err != nil {
 		t.Fatal(err)
 	}
-	transactionData = &transaction.Transaction{
+	transactionData := &transaction.Transaction{
 		MerchantID:  uint64(client.Config.MerchantID),
 		PosID:       uint64(client.Config.PosID),
 		SessionID:   uuid.NewString(),
@@ -126,31 +123,38 @@ func TestCreateTransaction(t *testing.T) {
 	}
 }
 
-//ONLY MANUAL TEST
-func TestVerifyTransaction(t *testing.T) {
-	if isManual {
-		TestCreateTransaction(t)
-		client, err := p24Client.New("conf/testsandbox.ini")
-		if err != nil {
-			t.Fatal(err)
-		}
-		orderId := uint64(123123123) //must be manually filled(!)
-		transactionData.OrderID = &(orderId)
-		transactionData.SessionID = "aaaabbbb-1111-2222-3333-ccccddddeeee" //must be manually filled (!)
-		response, err := client.VerifyTransaction(transactionData)
-		if err != nil {
-			t.Fatal(err)
-		}
+var isManual bool
 
-		if response.Data == nil || response.Data.Status == "" {
-			t.Fatal("invalid response data")
-		}
-
-		if response.Data.Status != "success" {
-			t.Fatal("transaction status is not success")
-		}
-	} else {
-		t.Log("Skipping, this test can only be run manually!")
+func TestStatus(t *testing.T) {
+	if !isManual {
+		t.Log("this can be run only with manually filled")
 		t.SkipNow()
 	}
+
+	exampleString := `{"merchantId":123123,"posId":123123,"sessionId":"11223344-aaaa-bbbb-cccc-445566778899","amount":100,"originAmount":100,"currency":"PLN","orderId":111222333,"methodId":94,"statement":"p24-A11-A11-A11","sign":"596af9bc39271b4cfdab45937"}`
+	exampleBytes := []byte(exampleString)
+
+	client, err := p24Client.New("conf/testsandbox.ini")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	transactionNoti, err := client.TransactionNotification(exampleBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	transactionNotiResp, err := client.VerifyTransaction(transactionNoti)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if transactionNotiResp.Data == nil || transactionNotiResp.Data.Status == "" {
+		t.Fatal("invalid response data")
+	}
+
+	if transactionNotiResp.Data.Status != "success" {
+		t.Fatal("transaction status is not success")
+	}
+
 }

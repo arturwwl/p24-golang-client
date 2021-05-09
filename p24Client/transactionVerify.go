@@ -2,35 +2,34 @@ package p24Client
 
 import (
 	"encoding/json"
+	p24Error "github.com/arturwwl/p24-golang-client/error"
 	"github.com/arturwwl/p24-golang-client/model/transaction"
-	"github.com/arturwwl/p24-golang-client/model/trasactionVerify"
+	"github.com/arturwwl/p24-golang-client/model/transactionNotification"
+	"github.com/arturwwl/p24-golang-client/model/transactionVerify"
 	p24Path "github.com/arturwwl/p24-golang-client/path"
 )
 
-func (c *P24Client) VerifyTransaction(transactionData *transaction.Transaction) (*transaction.Verify, error) {
+func (c *P24Client) VerifyTransaction(transactionNoti *transactionNotification.TransactionNotification) (*transaction.Verify, p24Error.P24Error) {
 
-	if true { //tVerify does not need to be accessed later
-		tVerify := &trasactionVerify.TransactionVerify{
-			PosID:      transactionData.PosID,
-			SessionID:  transactionData.SessionID,
-			Amount:     transactionData.Amount,
-			Currency:   transactionData.Currency,
-			OrderID:    transactionData.OrderID,
-			MerchantID: &transactionData.MerchantID,
-			Sign:       "", //don't forget calc it!
-		}
-		tVerify.CalcSign(c.Config.CrcKey)
-
-		transactionData.Sign = tVerify.Sign
+	tVerify := &transactionVerify.TransactionVerify{
+		MerchantID: &transactionNoti.MerchantID,
+		PosID:      transactionNoti.PosID,
+		SessionID:  transactionNoti.SessionID,
+		Amount:     transactionNoti.Amount,
+		Currency:   transactionNoti.Currency,
+		OrderID:    &transactionNoti.OrderID,
+		Sign:       "", //don't forget calc it!
 	}
-	bodyBytes, err := c.MakeRequest("PUT", p24Path.TransactionVerify, transactionData)
+	tVerify.CalcSign(c.Config.CrcKey)
+
+	bodyBytes, err := c.MakeRequest("PUT", p24Path.TransactionVerify, tVerify)
 	if err != nil {
 		return nil, err
 	}
 
-	tVerify := &transaction.Verify{}
+	tVerifyResponse := &transaction.Verify{}
 	//omit error
-	_ = json.Unmarshal(bodyBytes, tVerify)
+	_ = json.Unmarshal(bodyBytes, tVerifyResponse)
 
-	return tVerify, nil
+	return tVerifyResponse, nil
 }

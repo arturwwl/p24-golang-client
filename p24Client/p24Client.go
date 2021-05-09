@@ -3,6 +3,7 @@ package p24Client
 import (
 	"encoding/json"
 	"github.com/arturwwl/p24-golang-client/config"
+	p24Error "github.com/arturwwl/p24-golang-client/error"
 	"github.com/arturwwl/p24-golang-client/model/testAccess"
 	p24Path "github.com/arturwwl/p24-golang-client/path"
 )
@@ -11,7 +12,7 @@ type P24Client struct {
 	Config config.Config
 }
 
-func New(configPath string) (client *P24Client, err error) {
+func New(configPath string) (client *P24Client, err p24Error.P24Error) {
 	client = new(P24Client)
 	client.Config, err = config.LoadConfig(configPath)
 
