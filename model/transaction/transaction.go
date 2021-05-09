@@ -4,6 +4,7 @@ import "github.com/arturwwl/p24-golang-client/currency"
 
 type Transaction struct {
 	MerchantID  uint64            `json:"merchantId"`          //ID Sklepu
+	OrderID     *uint64           `json:"orderId"`             //ID Sklepu
 	PosID       uint64            `json:"posId"`               //ID Sklepu (domyślnie ID Sprzedawcy)
 	SessionID   string            `json:"sessionId"`           //Unikalny identyfikator z systemu sprzedawcy
 	Amount      uint64            `json:"amount"`              //Kwota transakcji wyrażona w groszach, np. 1.23 PLN = 123
@@ -52,4 +53,13 @@ type Created struct {
 
 type CreatedData struct {
 	Token string
+}
+
+type Verify struct {
+	Data         *VerifyData
+	ResponseCode uint64
+}
+
+type VerifyData struct {
+	Status string
 }

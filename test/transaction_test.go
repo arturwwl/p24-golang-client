@@ -71,12 +71,16 @@ func TestPaymentMethods(t *testing.T) {
 	}
 	t.Log(methods)
 }
+
+var transactionData *transaction.Transaction
+var isManual bool
+
 func TestCreateTransaction(t *testing.T) {
 	client, err := p24Client.New("conf/testsandbox.ini")
 	if err != nil {
 		t.Fatal(err)
 	}
-	transactionData := &transaction.Transaction{
+	transactionData = &transaction.Transaction{
 		MerchantID:  uint64(client.Config.MerchantID),
 		PosID:       uint64(client.Config.PosID),
 		SessionID:   uuid.NewString(),
@@ -93,7 +97,7 @@ func TestCreateTransaction(t *testing.T) {
 		Language: "pl",
 		//Method:            0,
 		UrlReturn: client.Config.ReturnUrl,
-		//UrlStatus:         client.Config.StatusUrl,
+		UrlStatus: &client.Config.StatusUrl,
 		//TimeLimit:         client.Config.TransactionTimeLimit,
 		//Channel:           0,
 		//RegulationAccept:  false,
@@ -107,9 +111,46 @@ func TestCreateTransaction(t *testing.T) {
 		//Cart:              nil,
 		//Additional:        nil,
 	}
-	methods, err := client.RegisterTransaction(transactionData)
+	response, err := client.RegisterTransaction(transactionData)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(methods)
+
+	if response.Data == nil || response.Data.Token == "" {
+		t.Fatal("invalid response data")
+	}
+
+	link := client.GenerateTransactionClientLink(response.Data.Token)
+	if link == "" {
+		t.Fatal("client link cannot be null")
+	}
+}
+
+//ONLY MANUAL TEST
+func TestVerifyTransaction(t *testing.T) {
+	if isManual {
+		TestCreateTransaction(t)
+		client, err := p24Client.New("conf/testsandbox.ini")
+		if err != nil {
+			t.Fatal(err)
+		}
+		orderId := uint64(123123123) //must be manually filled(!)
+		transactionData.OrderID = &(orderId)
+		transactionData.SessionID = "aaaabbbb-1111-2222-3333-ccccddddeeee" //must be manually filled (!)
+		response, err := client.VerifyTransaction(transactionData)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if response.Data == nil || response.Data.Status == "" {
+			t.Fatal("invalid response data")
+		}
+
+		if response.Data.Status != "success" {
+			t.Fatal("transaction status is not success")
+		}
+	} else {
+		t.Log("Skipping, this test can only be run manually!")
+		t.SkipNow()
+	}
 }

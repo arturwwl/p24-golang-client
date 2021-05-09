@@ -2,17 +2,12 @@ package p24Client
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/arturwwl/p24-golang-client/model/transaction"
 	"github.com/arturwwl/p24-golang-client/model/trasactionVerify"
 	p24Path "github.com/arturwwl/p24-golang-client/path"
 )
 
-func (c *P24Client) GenerateTransactionClientLink(token string) string {
-	return fmt.Sprintf(getUrl(c.Config.IsProd, p24Path.TransactionClientLink), token)
-}
-
-func (c *P24Client) RegisterTransaction(transactionData *transaction.Transaction) (*transaction.Created, error) {
+func (c *P24Client) VerifyTransaction(transactionData *transaction.Transaction) (*transaction.Verify, error) {
 
 	if true { //tVerify does not need to be accessed later
 		tVerify := &trasactionVerify.TransactionVerify{
@@ -20,22 +15,22 @@ func (c *P24Client) RegisterTransaction(transactionData *transaction.Transaction
 			SessionID:  transactionData.SessionID,
 			Amount:     transactionData.Amount,
 			Currency:   transactionData.Currency,
-			OrderID:    nil,
+			OrderID:    transactionData.OrderID,
 			MerchantID: &transactionData.MerchantID,
-			Sign:       "", //don't forget create it!
+			Sign:       "", //don't forget calc it!
 		}
-		tVerify.CreateSign(c.Config.CrcKey)
+		tVerify.CalcSign(c.Config.CrcKey)
 
 		transactionData.Sign = tVerify.Sign
 	}
-	bodyBytes, err := c.MakeRequest("POST", p24Path.TransactionRegister, transactionData)
+	bodyBytes, err := c.MakeRequest("PUT", p24Path.TransactionVerify, transactionData)
 	if err != nil {
 		return nil, err
 	}
 
-	tCreated := &transaction.Created{}
+	tVerify := &transaction.Verify{}
 	//omit error
-	_ = json.Unmarshal(bodyBytes, tCreated)
+	_ = json.Unmarshal(bodyBytes, tVerify)
 
-	return tCreated, nil
+	return tVerify, nil
 }
