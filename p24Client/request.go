@@ -61,6 +61,13 @@ func (c *P24Client) MakeRequest(method string, path string, data interface{}) ([
 	if resp.StatusCode > 204 {
 		var errO p24ErrorModel.ErrorStruct
 		_ = json.Unmarshal(bodyBytes, &errO)
+		if errO.Error == "" {
+			if resp.StatusCode >= 500 {
+				errO.Error = "P24 Internal error"
+			} else {
+				errO.Error = "P24 Unknown error"
+			}
+		}
 		return nil, p24Error.Errorf(errO.Error)
 	}
 
